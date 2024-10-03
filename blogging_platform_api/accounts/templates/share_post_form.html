@@ -1,0 +1,16 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Share Post</title>
+</head>
+<body>
+    <h1>Share "{{ post.title }}"</h1>
+    <form method="post">
+        {% csrf_token %}
+        <label for="recipient_email">Recipient Email:</label>
+        <input type="email" name="recipient_email" id="recipient_email" required>
+        <br>
+        <button type="submit">Send Email</button>
+    </form>
+    <div id="messages"></div>  </body>
+</html>
