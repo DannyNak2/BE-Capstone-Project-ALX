@@ -66,14 +66,13 @@ class PostListCreateView(generics.ListCreateAPIView):
     queryset = Post.objects.filter(status='published').order_by('-published_date')
     serializer_class = PostSerializer
     pagination_class = StandardResultsSetPagination
-    permission_classes = [permissions.IsAuthenticatedOrReadOnly,IsAuthorOrReadOnly]
-    authentication_classes = [TokenAuthentication]
+    permission_classes = [permissions.IsAuthenticatedOrReadOnly, IsAuthorOrReadOnly]
     filter_backends = [DjangoFilterBackend, filters.OrderingFilter, filters.SearchFilter]
     filterset_class = PostFilter
     search_fields = ['title', 'content', 'tags__name', 'author__username']  # Search by title, content, tags, and author
     ordering_fields = ['published_date', 'category']
     ordering = ['-published_date']
-    search_fields = ['title', 'content']
+    
 
     def perform_create(self, serializer):
         # Ensure content is passed and not empty
@@ -86,7 +85,6 @@ class PostRetrieveUpdateDestroyView(generics.RetrieveUpdateDestroyAPIView):
     queryset = Post.objects.all()
     serializer_class = PostSerializer
     permission_classes = [permissions.IsAuthenticatedOrReadOnly, IsAuthorOrReadOnly]
-    authentication_classes = [TokenAuthentication]
 
     def get_permissions(self):
         if self.request.method in ['PUT', 'PATCH', 'DELETE']:
@@ -284,3 +282,52 @@ def share_post_via_email(request, post_id, recipient_email):
         send_mail(subject, message, request.user.email, [recipient_email])
 
     return Response({'message': 'Post shared successfully.'})
+
+
+class PostsByCategoryView(generics.ListAPIView):
+    serializer_class = PostSerializer
+    pagination_class = StandardResultsSetPagination
+    permission_classes = [permissions.IsAuthenticatedOrReadOnly]
+    filter_backends = [DjangoFilterBackend, filters.OrderingFilter, filters.SearchFilter]
+    search_fields = ['title', 'content', 'tags__name']
+    ordering_fields = ['published_date']
+    
+    def get_queryset(self):
+        category_id = self.kwargs['category_id']
+        queryset = Post.objects.filter(category_id=category_id, status='published')
+
+        # Apply optional filters
+        published_date = self.request.query_params.get('published_date')
+        tags = self.request.query_params.getlist('tags')
+        
+        if published_date:
+            queryset = queryset.filter(published_date__date=published_date)
+        
+        if tags:
+            queryset = queryset.filter(tags__name__in=tags).distinct()
+
+        return queryset
+
+class PostsByAuthorView(generics.ListAPIView):
+    serializer_class = PostSerializer
+    pagination_class = StandardResultsSetPagination
+    permission_classes = [permissions.IsAuthenticatedOrReadOnly]
+    filter_backends = [DjangoFilterBackend, filters.OrderingFilter, filters.SearchFilter]
+    search_fields = ['title', 'content', 'tags__name']
+    ordering_fields = ['published_date']
+    
+    def get_queryset(self):
+        author_id = self.kwargs['author_id']
+        queryset = Post.objects.filter(author_id=author_id, status='published')
+
+        # Apply optional filters
+        published_date = self.request.query_params.get('published_date')
+        tags = self.request.query_params.getlist('tags')
+        
+        if published_date:
+            queryset = queryset.filter(published_date__date=published_date)
+        
+        if tags:
+            queryset = queryset.filter(tags__name__in=tags).distinct()
+
+        return queryset

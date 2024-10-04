@@ -69,6 +69,15 @@ class PostSerializer(serializers.ModelSerializer):
             raise serializers.ValidationError(f"Content cannot exceed {self.MAX_CONTENT_LENGTH} characters.")
         return value
 
+""" def validate(self, data):
+        
+        Ensure that movie_title and review_content are provided.
+
+        if not data.get('title'):
+            raise serializers.ValidationError("Post Title is required.")
+        if not data.get('author'):
+            raise serializers.ValidationError("Post Author is required.")
+        return data """
 
 class PostDeleteSerializer(serializers.Serializer):
     post_id = serializers.PrimaryKeyRelatedField(queryset=Post.objects.all())

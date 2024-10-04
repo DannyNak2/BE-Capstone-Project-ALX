@@ -1,7 +1,7 @@
 from django.urls import path
 from .views import RegisterView, ProfileView, PostListCreateView, PostRetrieveUpdateDestroyView, share_post_via_email
 from rest_framework_simplejwt.views import TokenObtainPairView, TokenRefreshView
-from .views import CommentListCreateView, TopLikedPostsView, TopRatedPostsView, SubscriptionView, UnsubscribeView, NewPostNotification,LikePostView,RatePostView,CommentUpdateDestroyView,SharePostView,PostDeleteView
+from .views import CommentListCreateView, TopLikedPostsView, TopRatedPostsView, SubscriptionView, UnsubscribeView, NewPostNotification,LikePostView,RatePostView,CommentUpdateDestroyView,SharePostView,PostDeleteView, PostsByCategoryView, PostsByAuthorView
 
 app_name = 'accounts'
 
@@ -30,5 +30,7 @@ urlpatterns = [
     path('posts/<int:pk>/comments/<int:comment_pk>/', CommentUpdateDestroyView.as_view(), name='comment-detail'),
     path('posts/<int:pk>/share/', SharePostView.as_view(), name='share-post'),
     path('posts/<int:pk>/', PostDeleteView.as_view(), name='post-delete'),
+    path('posts/category/<int:category_id>/', PostsByCategoryView.as_view(), name='posts-by-category'),
+    path('posts/author/<int:author_id>/', PostsByAuthorView.as_view(), name='posts-by-author'),
 
 ]
