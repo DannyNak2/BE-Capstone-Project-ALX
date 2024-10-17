@@ -28,12 +28,12 @@ Follow these steps to set up the **Blogging Platform API** locally:
    cd blogging_platform_api
 
 2. **Create and activate a virtual environment:**
-    On Windows:
+    - On Windows:
     ```bash
     python -m venv .venv
     .venv\Scripts\activate
 
-    On macOS/Linux:
+    - On macOS/Linux:
     ```bash
     python -m venv .venv
     source .venv/bin/activate
@@ -61,17 +61,17 @@ Here are the main API endpoints available in the Blogging Platform API:
 
 **User Registration and Authentication**
 
-POST /register/ – Register a new user
-POST /login/ – Log in a user
-POST /token/refresh/ – Refresh JWT token
-GET /profile/ – Get logged-in user's profile
+- POST /register/ – Register a new user
+- POST /login/ – Log in a user
+- POST /token/refresh/ – Refresh JWT token
+- GET /profile/ – Get logged-in user's profile
 
 **Post Management**
 
-GET /posts/ – List all published blog posts
-POST /posts/ – Create a new blog post
-GET /posts/drafts/ – List user's draft posts
-GET, PUT, DELETE /posts/<id>/ – Retrieve, update, or delete a specific post
+- GET /posts/ – List all published blog posts
+- POST /posts/ – Create a new blog post
+- GET /posts/drafts/ – List user's draft posts
+- GET, PUT, DELETE /posts/<id>/ – Retrieve, update, or delete a specific post
 
 **Comments Management**
 
