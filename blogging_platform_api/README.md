@@ -166,11 +166,4 @@ This project is licensed under the MIT License. See the LICENSE file for details
 
 For any inquiries or feedback, please reach out to: danielnakachew1@gmail.com
 
-    ```markdown
-    ### Key Improvements:
-    1. **Headings and Subheadings**: Clear and structured headings using `##`, `###`, and `####` for readability.
-    2. **Code Blocks**: Syntax-highlighted code blocks for commands, making it easier to copy and paste.
-    3. **Bold Text**: Important terms like JWT, POST, and API Endpoints are bold for emphasis.
-    4. **Lists**: Properly formatted lists for steps and features to improve clarity.
 
-    This version should look clean, professional, and highly readable on GitHub. Let me know if you'd like any further tweaks!
