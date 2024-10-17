@@ -29,7 +29,7 @@ Follow these steps to set up the **Blogging Platform API** locally:
 
 2. **Create and activate a virtual environment:**
     - On Windows:
-    ```bash
+    ``bash
     python -m venv .venv
     .venv\Scripts\activate
 
@@ -75,89 +75,90 @@ Here are the main API endpoints available in the Blogging Platform API:
 
 **Comments Management**
 
-GET, POST /posts/<post_id>/comments/ – List or add comments to a post
-PUT, DELETE /posts/<post_id>/comments/<comment_id>/ – Update or delete a specific comment
+- GET, POST /posts/<post_id>/comments/ – List or add comments to a post
+- PUT, DELETE /posts/<post_id>/comments/<comment_id>/ – Update or delete a specific comment
 
 **Post Features**
 
-GET /posts/top-liked/ – List top liked posts
-GET /posts/top-rated/ – List top rated posts
-POST /posts/<id>/like/ – Like a specific post
-POST /posts/<id>/rate/ – Rate a specific post
-POST /posts/<id>/share/ – Share a specific post
+- GET /posts/top-liked/ – List top liked posts
+- GET /posts/top-rated/ – List top rated posts
+- POST /posts/<id>/like/ – Like a specific post
+- POST /posts/<id>/rate/ – Rate a specific post
+- POST /posts/<id>/share/ – Share a specific post
 
 **Subscription Management**
 
-POST /subscribe/ – Subscribe to a category or author
-DELETE /unsubscribe/<id>/ – Unsubscribe from a category or author
-POST /new-post/ – Notify users of new posts from subscribed authors/categories
+- OST /subscribe/ – Subscribe to a category or author
+- DELETE /unsubscribe/<id>/ – Unsubscribe from a category or author
+- POST /new-post/ – Notify users of new posts from subscribed authors/categories
 
 **Search and Filtering**
 
-GET /posts/category/<category_id>/ – Filter posts by category
-GET /posts/author/<author_id>/ – Filter posts by author
+- GET /posts/category/<category_id>/ – Filter posts by category
+- GET /posts/author/<author_id>/ – Filter posts by author
 
 
 ## Authentication
 
 This project uses JWT (JSON Web Token) for authentication. To access protected endpoints, include a valid JWT token in the Authorization header:
 
-    ```makefile
+    ``makefile
     Authorization: Bearer <your-token>
 
-**Testing**
+
+## Testing
 
 To run the test suite:
 
-    ```bash
+    ``bash
     python manage.py test
 
 
-**Deployment**
+## Deployment
 
-To deploy the Blogging Platform API on platforms like Heroku or PythonAnywhere, follow these steps:
+To deploy the **Blogging Platform API** on platforms like **Heroku** or **PythonAnywhere**, follow these steps:
 
-1.Create an account on your chosen platform.
-2.Create a new app in the platform's dashboard.
-3.Set environment variables:
-SECRET_KEY
-DEBUG (set to False for production)
-Database settings (e.g., PostgreSQL for production)
-4.Deploy your code using Git:
+1.**Create an account** on your chosen platform.
+2.**Create a new** app in the platform's dashboard.
+3.**Set environment variables:**
+- SECRET_KEY
+- DEBUG (set to False for production)
+- Database settings (e.g., PostgreSQL for production)
+4.**Deploy your code using Git:**
 On Heroku: git push heroku main
 On PythonAnywhere: Follow their Django deployment guide.
-5.Test your deployed API by accessing the public URL provided by the platform.
+5.**Test your deployed API** by accessing the public URL provided by the platform.
 
 
-**Contributing**
+## Contributing
 
-Contributions are welcome! To contribute to the Blogging Platform API:
+Contributions are welcome! To contribute to the **Blogging Platform API**:
 
-1.Fork the repository.
-2.Create a new branch for your feature:
+1.**Fork the repository**.
+2.**Create a new branch** for your feature:
 
-    ```bash
+    ``bash
     git checkout -b feature/your-feature-name
 
-3.Make your changes and commit them:
+3.**Make your changes** and commit them:
 
-    ```bash
+    ``bash
     git commit -m "Add your feature"
 
-4.Push your changes:
+4.**Push your changes**:
 
-    ```bash
+    ``bash
     git push origin feature/your-feature-name
 
-5.Submit a pull request.
+5.**Submit a pull request**.
 
 
-**License**
+## License
 
 This project is licensed under the MIT License. See the LICENSE file for details.
 
 
-**Contact**
+## Contact
 
 For any inquiries or feedback, please reach out to: danielnakachew1@gmail.com
 
