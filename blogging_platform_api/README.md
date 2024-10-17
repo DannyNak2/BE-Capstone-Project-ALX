@@ -119,6 +119,7 @@ To run the test suite:
 To deploy the **Blogging Platform API** on platforms like **Heroku** or **PythonAnywhere**, follow these steps:
 
 **1.Create an account** on your chosen platform.
+
 **2.Create a new** app in the platform's dashboard.
 3.**Set environment variables:**
 - SECRET_KEY
