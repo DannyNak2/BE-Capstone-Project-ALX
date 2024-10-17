@@ -121,13 +121,16 @@ To deploy the **Blogging Platform API** on platforms like **Heroku** or **Python
 **1.Create an account** on your chosen platform.
 
 **2.Create a new** app in the platform's dashboard.
+
 3.**Set environment variables:**
 - SECRET_KEY
 - DEBUG (set to False for production)
 - Database settings (e.g., PostgreSQL for production)
+
 4.**Deploy your code using Git:**
 On Heroku: git push heroku main
 On PythonAnywhere: Follow their Django deployment guide.
+
 5.**Test your deployed API** by accessing the public URL provided by the platform.
 
 
