@@ -28,14 +28,15 @@ Follow these steps to set up the **Blogging Platform API** locally:
    cd blogging_platform_api
 
 2. **Create and activate a virtual environment:**
-    ``bash
-    - On Windows:
-   
-    python -m venv .venv
-    .venv\Scripts\activate
-
-    - On macOS/Linux:
     
+ - On Windows:
+
+   ```bash
+   python -m venv .venv
+   .venv\Scripts\activate
+
+ - On macOS/Linux:
+   ```bash
     python -m venv .venv
     source .venv/bin/activate
 
