@@ -35,7 +35,7 @@ Follow these steps to set up the **Blogging Platform API** locally:
     .venv\Scripts\activate
 
     - On macOS/Linux:
-    ```bash
+    
     python -m venv .venv
     source .venv/bin/activate
 
