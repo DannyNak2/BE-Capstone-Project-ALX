@@ -55,39 +55,50 @@ Follow these steps to set up the **Blogging Platform API** locally:
     python manage.py runserver
 
 
-**API Endpoints**
+## API Endpoints
 
 Here are the main API endpoints available in the Blogging Platform API:
 
-User Registration and Authentication
+**User Registration and Authentication**
+
 POST /register/ – Register a new user
 POST /login/ – Log in a user
 POST /token/refresh/ – Refresh JWT token
 GET /profile/ – Get logged-in user's profile
-Post Management
+
+**Post Management**
+
 GET /posts/ – List all published blog posts
 POST /posts/ – Create a new blog post
 GET /posts/drafts/ – List user's draft posts
 GET, PUT, DELETE /posts/<id>/ – Retrieve, update, or delete a specific post
-Comments Management
+
+**Comments Management**
+
 GET, POST /posts/<post_id>/comments/ – List or add comments to a post
 PUT, DELETE /posts/<post_id>/comments/<comment_id>/ – Update or delete a specific comment
-Post Features
+
+**Post Features**
+
 GET /posts/top-liked/ – List top liked posts
 GET /posts/top-rated/ – List top rated posts
 POST /posts/<id>/like/ – Like a specific post
 POST /posts/<id>/rate/ – Rate a specific post
 POST /posts/<id>/share/ – Share a specific post
-Subscription Management
+
+**Subscription Management**
+
 POST /subscribe/ – Subscribe to a category or author
 DELETE /unsubscribe/<id>/ – Unsubscribe from a category or author
 POST /new-post/ – Notify users of new posts from subscribed authors/categories
-Search and Filtering
+
+**Search and Filtering**
+
 GET /posts/category/<category_id>/ – Filter posts by category
 GET /posts/author/<author_id>/ – Filter posts by author
 
 
-**Authentication**
+## Authentication
 
 This project uses JWT (JSON Web Token) for authentication. To access protected endpoints, include a valid JWT token in the Authorization header:
 
