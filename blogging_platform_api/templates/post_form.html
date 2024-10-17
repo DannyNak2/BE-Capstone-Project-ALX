@@ -1,0 +1,12 @@
+{% extends 'accounts/base.html' %}
+
+{% block title %}Create/Edit Post{% endblock %}
+
+{% block content %}
+<h2>{% if post %}Edit{% else %}Create{% endif %} Post</h2>
+<form method="post">
+    {% csrf_token %}
+    {{ form.as_p }}
+    <button type="submit">{% if post %}Update{% else %}Create{% endif %} Post</button>
+</form>
+{% endblock %}

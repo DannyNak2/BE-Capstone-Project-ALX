@@ -1,0 +1,22 @@
+{% extends 'accounts/base.html' %}
+
+{% block title %}Subscriptions{% endblock %}
+
+{% block content %}
+<h2>Your Subscriptions</h2>
+<ul>
+    {% for subscription in subscriptions %}
+    <li>{{ subscription.author.username }} - <a href="{% url 'accounts:unsubscribe' subscription.id %}">Unsubscribe</a></li>
+    {% endfor %}
+</ul>
+<h3>Subscribe to Author</h3>
+<form method="post">
+    {% csrf_token %}
+    <select name="author_id">
+        {% for author in authors %}
+        <option value="{{ author.id }}">{{ author.username }}</option>
+        {% endfor %}
+    </select>
+    <button type="submit">Subscribe</button>
+</form>
+{% endblock %}

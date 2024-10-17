@@ -1,60 +1,145 @@
-from django_filters.rest_framework import DjangoFilterBackend
-from rest_framework.authentication import TokenAuthentication
-from django.db.models import Avg, Count
-from django_filters import filters
-from rest_framework import generics, permissions, serializers
-from django.contrib.auth import get_user_model
-from .serializers import RegisterSerializer, UserProfileSerializer, PostSerializer, CommentSerializer, SubscriptionSerializer
-from rest_framework.permissions import IsAuthenticated
-from .permissions import IsAuthorOrReadOnly
-from .models import Post,Comment,PostRating
-from rest_framework.pagination import PageNumberPagination
-from .filters import PostFilter
-from rest_framework import filters
-from django.core.mail import send_mail
-from django.shortcuts import get_object_or_404, render
-from django.http import JsonResponse
-from rest_framework.response import Response
-from .models import Subscription
-from rest_framework import serializers
-from django.db.models import Q
-from rest_framework.views import APIView,status
-from allauth.account.models import EmailAddress
+# Django and third-party imports
+from django.contrib import messages
+from django.contrib.auth import get_user_model, authenticate, login
 from django.contrib.auth.mixins import LoginRequiredMixin, PermissionRequiredMixin
+from django.core.mail import send_mail
+from django.db.models import Avg, Count, Q, Prefetch
+from django.http import JsonResponse
+from django.shortcuts import get_object_or_404, render, redirect
+from django.urls import reverse_lazy,reverse
+from django.utils import timezone
+from django.conf import settings  # Access email configuration if needed
+from django.views.generic import CreateView
 
+# Django REST Framework imports
+from rest_framework import filters, generics, permissions, serializers, status
+from rest_framework.authentication import TokenAuthentication
 from rest_framework.generics import GenericAPIView
+from rest_framework.pagination import PageNumberPagination
+from rest_framework.permissions import IsAuthenticated
+from rest_framework.response import Response
+from rest_framework.views import APIView
+from rest_framework_simplejwt.views import TokenObtainPairView
+from rest_framework_simplejwt.tokens import RefreshToken
+
+# Django Filters imports
+from django_filters.rest_framework import DjangoFilterBackend
+from rest_framework import filters
+
+
+# Allauth imports
+from allauth.account.models import EmailAddress
+
+# Local app imports (models, serializers, permissions, filters)
+from .models import Post, Comment, PostRating, Subscription, Category, Tag, PostLike
+from .serializers import (
+    RegisterSerializer, UserProfileSerializer, 
+    PostSerializer, CommentSerializer, SubscriptionSerializer, RatePostSerializer, LikePostSerializer, EmptySerializer
+)
+from .permissions import IsAuthorOrReadOnly, IsOwner
+from .filters import PostFilter
+
 
 
 User = get_user_model()
 
 class RegisterView(generics.CreateAPIView):
+    template_name = 'register.html'
     queryset = User.objects.all()
     serializer_class = RegisterSerializer
+    success_url = reverse_lazy('accounts:post-list-create')
+
+    def get(self, request, *args, **kwargs):
+        serializer = self.get_serializer()
+        return render(request, self.template_name, {'serializer': serializer})
+
+    def post(self, request, *args, **kwargs):
+        serializer = self.get_serializer(data=request.POST)
+        if serializer.is_valid():
+            serializer.save()
+            messages.success(request, "Registration successful. You can now log in.")
+            return redirect(self.success_url)
+        else:
+            # If the form is invalid, pass errors to the template
+            return render(request, self.template_name, {'serializer': serializer, 'errors': serializer.errors})
+        
+class CustomLoginView(TokenObtainPairView):
+    template_name = 'login.html'
+
+    def get(self, request, *args, **kwargs):
+        return render(request, self.template_name)
+
+    def post(self, request, *args, **kwargs):
+        response = super().post(request, *args, **kwargs)
+        if response.status_code == status.HTTP_200_OK:
+            # Authenticate the user
+            email = request.POST.get('email')
+            password = request.POST.get('password')
+            user = authenticate(request, email=email, password=password)
+            
+            if user is not None:
+                login(request, user)  # Log the user into the session
+                messages.success(request, "You have successfully logged in.")
+                return redirect(reverse('accounts:post-list-create'))  # Adjust this to your actual homepage
+            else:
+                messages.error(request, "Authentication failed.")
+        else:
+            messages.error(request, "Invalid email or password.")
+        
+        return render(request, self.template_name)
 
 class ProfileView(generics.RetrieveUpdateAPIView):
     queryset = User.objects.all()
     serializer_class = UserProfileSerializer
     permission_classes = [permissions.IsAuthenticated]
-    
+    template_name = 'profile.html'
 
     def get_object(self):
-        return self.request.user
-    
-    def retrieve(self, request, *args, **kwargs):  
+        return self.request.user  # Returns the currently authenticated user
 
-    # Retrieve the logged-in user's profile
-        user = request.user
-        serializer = self.get_serializer(user.profile)
-        return Response(serializer.data)
+    def get(self, request, *args, **kwargs):
+        user = self.get_object()
+        form = UserProfileSerializer(user).data  # Serialize user data
+        context = {'form': form, 'user': user}
+        return render(request, self.template_name, context)
 
-    def update(self, request, *args, **kwargs):
-        # Update the logged-in user's profile
-        user = request.user
-        serializer = self.get_serializer(user.profile, data=request.data, partial=True)
-        serializer.is_valid(raise_exception=True)
-        serializer.save() 
-    
-        return Response(serializer.data) 
+    def post(self, request, *args, **kwargs):
+        user = self.get_object()
+        serializer = self.get_serializer(
+            user, 
+            data=request.data, 
+            partial=True
+        )
+
+        # Check if the form is valid
+        if serializer.is_valid():
+            # Handle profile image separately because it's a file
+            profile_data = request.data.get('profile', {})
+            
+            if 'profile_picture' in request.FILES:
+                profile_picture = request.FILES['profile_picture']
+                user.profile.profile_picture = profile_picture  # Save new profile picture
+
+            # Update bio
+            bio = request.data.get('bio', None)
+            if bio is not None:
+                user.profile.bio = bio
+            
+            # Save the user and profile
+            user.profile.save()
+            serializer.save()
+            
+            # Debugging: Print statements to check values
+            print(f"Updated User: {user.username}, Bio: {user.profile.bio}, Profile Picture: {user.profile.profile_picture}")
+
+            # Pass updated form and user back to the template
+            context = {'form': serializer.data, 'user': user}
+            return render(request, self.template_name, context)
+        
+        # If form is invalid, return the form with error messages
+        context = {'form': serializer.errors, 'user': user}
+        return render(request, self.template_name, context)
+
 
 
 class StandardResultsSetPagination(PageNumberPagination):
@@ -63,28 +148,95 @@ class StandardResultsSetPagination(PageNumberPagination):
     max_page_size = 100
 
 class PostListCreateView(generics.ListCreateAPIView):
-    queryset = Post.objects.filter(status='published').order_by('-published_date')
     serializer_class = PostSerializer
     pagination_class = StandardResultsSetPagination
     permission_classes = [permissions.IsAuthenticatedOrReadOnly, IsAuthorOrReadOnly]
     filter_backends = [DjangoFilterBackend, filters.OrderingFilter, filters.SearchFilter]
     filterset_class = PostFilter
-    search_fields = ['title', 'content', 'tags__name', 'author__username']  # Search by title, content, tags, and author
+    search_fields = ['title', 'content', 'tags__name', 'author__username']
     ordering_fields = ['published_date', 'category']
     ordering = ['-published_date']
-    
+
+    def get_queryset(self):
+        # Start with the base queryset of published posts
+        queryset = Post.objects.filter(status='published').order_by('-published_date')
+
+        # Apply search filter (title, content, tags, author)
+        search_query = self.request.GET.get('search', None)
+        if search_query:
+            queryset = queryset.filter(
+                Q(title__icontains=search_query) | 
+                Q(content__icontains=search_query) |
+                Q(tags__name__icontains=search_query) |
+                Q(author__username__icontains=search_query)
+            ).distinct()
+
+        # Apply category filter
+        category = self.request.GET.get('category', None)
+        if category:
+            queryset = queryset.filter(category__id=category)
+
+        # Apply tags filter (multiple tags)
+        tags = self.request.GET.getlist('tags', None)
+        if tags:
+            queryset = queryset.filter(tags__id__in=tags).distinct()
+
+        return queryset
+
+    def get(self, request, *args, **kwargs):
+        # Get the list of published posts
+        posts = self.get_queryset()
+
+        # Fetch categories and tags for the dropdowns
+        categories = Category.objects.all()  # Get all categories
+        tags = Tag.objects.all()  # Get all tags
+
+        # Serialize the posts to pass to the template
+        serializer = self.serializer_class(posts, many=True)
+        
+
+        # Render the template with the serialized data
+        return render(request, 'post_list.html', {
+            'posts': serializer.data,
+            'categories': categories,
+            'tags': tags,
+        })
 
     def perform_create(self, serializer):
-        # Ensure content is passed and not empty
+        title = self.request.data.get('title')
         content = self.request.data.get('content')
+        status = self.request.data.get('status', 'draft')
+        category_id = self.request.data.get('category')  # Get category ID from request
+        tags_ids = self.request.data.get('tags')  # Get tags IDs from request
+        
+        # Validate title and content
+        if not title:
+            raise serializers.ValidationError("Title cannot be empty.")
         if not content:
             raise serializers.ValidationError("Content cannot be empty.")
-        serializer.save(author=self.request.user, status='draft', content=content)
+        if status not in ['draft', 'published']:
+            raise serializers.ValidationError("Status must be either 'draft' or 'published'.")
 
+        # Validate category and tags
+        if category_id:
+            try:
+                category = Category.objects.get(pk=category_id)
+            except Category.DoesNotExist:
+                raise serializers.ValidationError("Invalid category ID.")
+
+        # Create the post with the selected category and tags
+        serializer.save(author=self.request.user, status=status, title=title, content=content, category=category)
+
+        # Handle tags (assuming a ManyToMany relationship)
+        if tags_ids:
+            tags = Tag.objects.filter(pk__in=tags_ids)
+            serializer.instance.tags.set(tags)  # Associate tags with the post
+            
 class PostRetrieveUpdateDestroyView(generics.RetrieveUpdateDestroyAPIView):
     queryset = Post.objects.all()
     serializer_class = PostSerializer
     permission_classes = [permissions.IsAuthenticatedOrReadOnly, IsAuthorOrReadOnly]
+    template_name = 'post_detail.html'
 
     def get_permissions(self):
         if self.request.method in ['PUT', 'PATCH', 'DELETE']:
@@ -92,7 +244,10 @@ class PostRetrieveUpdateDestroyView(generics.RetrieveUpdateDestroyAPIView):
         else:
             self.permission_classes = [permissions.IsAuthenticatedOrReadOnly]
         return super().get_permissions()
-
+    
+    def get(self, request, *args, **kwargs):
+        post = self.get_object()
+        return render(request, self.template_name, {'post': post})
 
     def update(self, request, *args, **kwargs):
         partial = kwargs.pop('partial', False)
@@ -102,24 +257,37 @@ class PostRetrieveUpdateDestroyView(generics.RetrieveUpdateDestroyAPIView):
         if 'content' in request.data and not request.data['content']:
             return Response({'error': 'Content cannot be empty.'}, status=status.HTTP_400_BAD_REQUEST)
 
+        # Validate and set the status
+        if 'status' in request.data:
+            status = request.data['status']
+            if status not in ['draft', 'published']:
+                return Response({'error': "Status must be either 'draft' or 'published'."}, status=status.HTTP_400_BAD_REQUEST)
+
         serializer = self.get_serializer(instance, data=request.data, partial=partial)
         serializer.is_valid(raise_exception=True)
         self.perform_update(serializer)
 
-        return Response(serializer.data)
+        # Redirect to the post list after successful update
+        return redirect('accounts:post-list-create')
+
+    def delete(self, request, *args, **kwargs):
+        instance = self.get_object()
+        self.perform_destroy(instance)
+        # Redirect to the post list after successful deletion
+        return redirect('accounts:post-list-create')
 
     def get_object(self):
         try:
             return Post.objects.get(pk=self.kwargs.get('pk'))
         except Post.DoesNotExist:
             return Response(status=status.HTTP_404_NOT_FOUND)
-        
 
+class DraftPostListView(generics.ListAPIView):
+    serializer_class = PostSerializer
+    permission_classes = [permissions.IsAuthenticated]
 
-from django.contrib.auth.mixins import LoginRequiredMixin, PermissionRequiredMixin
-from rest_framework.permissions import IsAuthenticated
-from .permissions import IsOwner
-
+    def get_queryset(self):
+        return Post.objects.filter(author=self.request.user, status='draft').order_by('-created_at')
 
 
 class PostDeleteView(LoginRequiredMixin, PermissionRequiredMixin, GenericAPIView):
@@ -133,65 +301,93 @@ class PostDeleteView(LoginRequiredMixin, PermissionRequiredMixin, GenericAPIView
         post.delete()
         return Response(status=status.HTTP_204_NO_CONTENT)
 
-
-
     
 class LikePostView(generics.GenericAPIView):
+    serializer_class = LikePostSerializer  # Use the dummy serializer
+    permission_classes = [IsAuthenticated]
+
     def post(self, request, pk):
         post = get_object_or_404(Post, pk=pk)
         user = request.user
-        if user in post.likes.all():
-            post.likes.remove(user)
-        else:
-            post.likes.add(user)
-        return Response({'message': 'Post liked/unliked successfully.'})
+
+        # Use get_or_create to like the post
+        like, created = PostLike.objects.get_or_create(post=post, user=user)
+
+        if not created:
+            return Response({'message': 'You already liked this post.'}, status=400)
+
+        return Response({'message': 'Post liked successfully.'})
+
     
 class RatePostView(generics.GenericAPIView):
-    def post(self, request, pk):
-        post = get_object_or_404(Post, pk=pk)
-        user = request.user
-        rating = request.data.get('rating')
-        if rating is None:
-            return Response({'error': 'Rating is required.'}, status=400)
-        try:
-            rating = int(rating)
-            if rating < 1 or rating > 5:
-                return Response({'error': 'Rating must be between 1 and 5.'}, status=400)
-        except ValueError:
-            return Response({'error': 'Rating must be an integer.'}, status=400)
-        existing_rating = PostRating.objects.filter(post=post, user=user).first()
-        if existing_rating:
-            existing_rating.rating = rating
-            existing_rating.save()
-        else:
-            PostRating.objects.create(post=post, user=user, rating=rating)
-        return Response({'message': 'Post rated successfully.'})
-    
+    serializer_class = RatePostSerializer
+    permission_classes = [IsAuthenticated]  # Require the user to be logged in
 
+    def post(self, request, pk):
+        # Validate the incoming rating data using the serializer
+        serializer = self.get_serializer(data=request.data)
+        if serializer.is_valid():
+            post = get_object_or_404(Post, pk=pk)
+            user = request.user
+
+            # Extract the validated rating value from the serializer
+            rating = serializer.validated_data['rating']
+
+            # Use get_or_create to rate the post, either creating or updating the rating
+            existing_rating, created = PostRating.objects.get_or_create(
+                post=post,
+                user=user,
+                defaults={'rating': rating}
+            )
+
+            if not created:
+                # Update the existing rating
+                existing_rating.rating = rating
+                existing_rating.save()
+
+            return Response({'message': 'Post rated successfully.'})
+        else:
+            # If the data is invalid, return the serializer errors
+            return Response(serializer.errors, status=400)
+    
 
 
 class CommentListCreateView(generics.ListCreateAPIView):
     queryset = Comment.objects.all()
     serializer_class = CommentSerializer
+    permission_classes = [permissions.IsAuthenticatedOrReadOnly]
+
+    def get_queryset(self):
+        # Fetch comments for a specific post
+        post_id = self.kwargs['post_id']
+        return Comment.objects.filter(post_id=post_id, parent_comment__isnull=True).order_by('-created_at')
 
     def perform_create(self, serializer):
-        serializer.save(user=self.request.user, post=self.get_object())
+        post = get_object_or_404(Post, pk=self.kwargs['post_id'])
+        serializer.save(user=self.request.user, post=post)
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        context['comments'] = self.get_queryset()  # Ensure comments are being passed
+        return context
 
 class CommentUpdateDestroyView(generics.RetrieveUpdateDestroyAPIView):
-    
-    def update(self, request, *args, **kwargs):
-        instance = self.get_object()
-        if instance.parent_comment:
-            instance.parent_comment.delete()
-        return super().update(request, *args, **kwargs)
-    
+    queryset = Comment.objects.all()
+    serializer_class = CommentSerializer
+    permission_classes = [permissions.IsAuthenticatedOrReadOnly, IsAuthorOrReadOnly]
+
     def get_object(self):
-        queryset = self.get_queryset()
-        filter_kwargs = {'pk': self.kwargs['pk']}
-        obj = queryset.filter(**filter_kwargs).first()
-        if not obj:
-            return Response(status=status.HTTP_404_NOT_FOUND)
-        return obj
+        comment_id = self.kwargs['comment_pk']
+        return get_object_or_404(Comment, id=comment_id)
+
+    def update(self, request, *args, **kwargs):
+        comment = self.get_object()
+        if comment.parent_comment:
+            # If updating a reply
+            parent_comment = comment.parent_comment
+            comment.parent_comment = parent_comment
+        return super().update(request, *args, **kwargs)
+
 
 class TopRatedPostsView(generics.ListAPIView):
     queryset = Post.objects.annotate(avg_rating=Avg('postrating__rating')).order_by('-avg_rating')
@@ -202,12 +398,50 @@ class TopLikedPostsView(generics.ListAPIView):
     serializer_class = PostSerializer
 
 
+
 class SharePostView(generics.GenericAPIView):
+    permission_classes = [permissions.IsAuthenticated]  # Ensure only authenticated users can share posts
+    serializer_class = EmptySerializer  # Dummy serializer
+    
+
     def post(self, request, pk):
+        # Retrieve the post object
         post = get_object_or_404(Post, pk=pk)
+
+        # Get recipient email from the request
         recipient_email = request.data.get('recipient_email')
-        # ... other sharing methods (e.g., social media)
-        return Response({'message': 'Post shared successfully.'})
+
+        # Validate recipient email
+        if not recipient_email:
+            return Response({'recipient_email': 'Recipient email is required.'}, status=status.HTTP_400_BAD_REQUEST)
+
+        # Prepare email details
+        subject = f"Check out this post: {post.title}"
+        message = (
+            f"Hello!\n\n"
+            f"Your friend {request.user.username} has shared a post with you:\n\n"
+            f"Title: {post.title}\n"
+            f"Link: {post.get_absolute_url()}\n\n"
+            f"Content Preview: {post.content[:200]}...\n\n"  # Preview of content
+        )
+        
+        # Send email
+        try:
+            send_mail(subject, message, settings.DEFAULT_FROM_EMAIL, [recipient_email])
+        except Exception as e:
+            return Response({'error': str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+
+        # Generate social media links
+        social_media_links = {
+            'facebook': f"https://www.facebook.com/sharer/sharer.php?u={post.get_absolute_url()}",
+            'twitter': f"https://twitter.com/intent/tweet?text={post.title}&url={post.get_absolute_url()}",
+        }
+
+        # Return response
+        return Response({
+            'message': 'Post shared successfully via email.',
+            'social_media_links': social_media_links
+        })
 
 
 
@@ -229,8 +463,25 @@ class UnsubscribeView(generics.DestroyAPIView):
     permission_classes = [permissions.IsAuthenticated]
 
     def get_object(self):
-        pk = self.kwargs.get('pk')
-        return self.get_queryset().filter(pk=pk, user=self.request.user).first()
+        # Fetch the subscription either by author or category
+        user = self.request.user
+        author_id = self.request.data.get('author_id')
+        category_id = self.request.data.get('category_id')
+
+        # Look for a subscription to either the author or category
+        if author_id:
+            return Subscription.objects.filter(user=user, author_id=author_id).first()
+        elif category_id:
+            return Subscription.objects.filter(user=user, category_id=category_id).first()
+
+        return None
+
+    def delete(self, request, *args, **kwargs):
+        subscription = self.get_object()
+        if subscription:
+            subscription.delete()
+            return Response({'message': 'Unsubscribed successfully.'}, status=200)
+        return Response({'error': 'Subscription not found.'}, status=404)
 
 def send_subscription_notification(user, post):
     subject = f"New post from {post.author.username}"
@@ -331,3 +582,8 @@ class PostsByAuthorView(generics.ListAPIView):
             queryset = queryset.filter(tags__name__in=tags).distinct()
 
         return queryset
+
+
+
+
+

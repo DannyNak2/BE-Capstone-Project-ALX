@@ -1,0 +1,101 @@
+{% extends 'base.html' %}
+
+{% block title %}
+    Post Detail - {{ post.title }}
+{% endblock %}
+
+{% block content %}
+<div class="post-detail">
+    <h1>{{ post.title }}</h1>
+    <p class="meta">
+        By <strong>{{ post.author.username }}</strong> 
+        | Published on {{ post.published_date|date:"F j, Y" }}
+        | Category: {{ post.category_name }}
+        | Tags: {% for tag in post.tags_names %}<span class="tag">{{ tag }}</span>{% if not forloop.last %},{% endif %}{% endfor %}
+    </p>
+
+    <div class="post-content">
+        <p>{{ post.content|safe }}</p>
+    </div>
+
+    <!-- Show post stats if available -->
+    <div class="post-stats">
+        <p><strong>Likes:</strong> {{ post.likes_count }}</p>
+        <p><strong>Average Rating:</strong> {% if post.average_rating %}{{ post.average_rating|floatformat:1 }}{% else %}No ratings yet{% endif %}</p>
+    </div>
+
+    <!-- Edit and Delete buttons if user is the author or has permissions -->
+    {% if user.is_authenticated and post.author.username == user.username %}
+    <div class="post-actions">
+        <a href="{% url 'accounts:post-retrieve-update-destroy' post.id %}" class="btn btn-primary">Edit Post</a>
+        <form action="{% url 'accounts:post-retrieve-update-destroy' post.id %}" method="POST" style="display:inline;">
+            {% csrf_token %}
+            <input type="hidden" name="_method" value="DELETE">
+            <button type="submit" class="btn btn-danger">Delete Post</button>
+        </form>
+    </div>
+    {% endif %}
+
+    
+    <!-- If not the author, display like/rating options -->
+    {% if user.is_authenticated and post.author.username != user.username %}
+    <div class="interaction">
+        <!-- Like button (assuming like functionality is in place) -->
+        <form action="{% url 'accounts:like-post' post.id %}" method="POST">
+            {% csrf_token %}
+            <button type="submit" class="btn btn-outline-success">
+                {% if user_has_liked %}
+                Unlike
+                {% else %}
+                Like
+                {% endif %}
+            </button>
+        </form>
+        
+        <!-- Rating system (if implemented) -->
+        <form action="{% url 'accounts:rate-post' post.id %}" method="POST">
+            {% csrf_token %}
+            <label for="rating">Rate this post:</label>
+            <select name="rating" id="rating">
+                <option value="">--Select Rating--</option>
+                <option value="1">1</option>
+                <option value="2">2</option>
+                <option value="3">3</option>
+                <option value="4">4</option>
+                <option value="5">5</option>
+            </select>
+            <button type="submit" class="btn btn-outline-primary">Submit Rating</button>
+        </form>
+    </div>
+    {% endif %}
+</div>
+
+<!-- Back to post list button -->
+<a href="{% url 'accounts:post-list-create' %}" class="btn btn-secondary">Back to Posts</a>
+
+
+<div class="comments">
+    <h3>Comments ({{ post.comments.count }})</h3>
+    
+    {% for comment in post.comments.all %}
+    <div class="comment">
+        <p><strong>{{ comment.author.username }}</strong> commented on {{ comment.created_at|date:"F j, Y, g:i a" }}</p>
+        <p>{{ comment.content }}</p>
+    </div>
+    {% empty %}
+    <p>No comments yet. Be the first to comment!</p>
+    {% endfor %}
+
+    
+    {% if user.is_authenticated %}
+    <h4>Add a Comment</h4>
+    <form action="{% url 'accounts:comment-list-create' post.id %}" method="POST">
+        {% csrf_token %}
+        <textarea name="content" rows="4" class="form-control" placeholder="Write your comment here..."></textarea>
+        <button type="submit" class="btn btn-primary">Submit Comment</button>
+    </form>
+    {% else %}
+    <p><a href="{% url 'login' %}">Log in</a> to post a comment.</p>
+    {% endif %}
+</div> 
+{% endblock %}

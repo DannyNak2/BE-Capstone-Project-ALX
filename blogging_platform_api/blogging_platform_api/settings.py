@@ -9,7 +9,7 @@ https://docs.djangoproject.com/en/5.1/topics/settings/
 For the full list of settings and their values, see
 https://docs.djangoproject.com/en/5.1/ref/settings/
 """
-
+import os
 from pathlib import Path
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
@@ -42,6 +42,7 @@ INSTALLED_APPS = [
     'accounts.apps.AccountsConfig',
     'rest_framework_simplejwt',
     'django_filters',
+    'django.contrib.sites',
     #third-party package (It provides views and URLs for sign-up, allows for social authentication via dozens of platforms, and has a long list of custom configurations that are easily accessed.) 
     'allauth',
     'allauth.account',
@@ -65,7 +66,7 @@ ROOT_URLCONF = 'blogging_platform_api.urls'
 TEMPLATES = [
     {
         'BACKEND': 'django.template.backends.django.DjangoTemplates',
-        'DIRS': [],
+        'DIRS': [os.path.join(BASE_DIR, 'templates')],
         'APP_DIRS': True,
         'OPTIONS': {
             'context_processors': [
@@ -133,7 +134,24 @@ USE_TZ = True
 # Static files (CSS, JavaScript, Images)
 # https://docs.djangoproject.com/en/5.1/howto/static-files/
 
-STATIC_URL = 'static/'
+
+
+# Static files (CSS, JavaScript, Images)
+STATIC_URL = '/static/'
+
+# Add the static directory inside the accounts app
+STATICFILES_DIRS=(os.path.join(BASE_DIR,'static'),)
+
+# This is where static files will be collected in production
+STATIC_ROOT=os.path.join(BASE_DIR,'staticfiles')
+
+
+# settings.py
+
+MEDIA_URL = '/media/'
+MEDIA_ROOT = os.path.join(BASE_DIR, 'media')
+
+
 
 # Default primary key field type
 # https://docs.djangoproject.com/en/5.1/ref/settings/#default-auto-field
@@ -143,6 +161,7 @@ DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 REST_FRAMEWORK = {
     'DEFAULT_AUTHENTICATION_CLASSES': (
         'rest_framework_simplejwt.authentication.JWTAuthentication',
+        'rest_framework.authentication.SessionAuthentication',
     ),
 
     'DEFAULT_FILTER_BACKENDS': ['django_filters.rest_framework.DjangoFilterBackend'],
@@ -159,4 +178,24 @@ SIMPLE_JWT = {
     'ROTATE_REFRESH_TOKENS': True,  # Rotate refresh tokens on refresh
     # ... other JWT settings
 }
+
+SITE_ID = 1
+
+"""
+  # Site ID (you may need to set this to the ID of your site)
+SITE_ID = 1
+
+# Allauth specific settings
+AUTHENTICATION_BACKENDS = (
+    
+    'allauth.account.auth_backends.AuthenticationBackend',  # Required
+)
+
+# Optional: Redirects after login/logout/signup
+LOGIN_REDIRECT_URL = '/'  # Redirect to home after login
+LOGOUT_REDIRECT_URL = '/'  # Redirect to home after logout
+ACCOUNT_LOGOUT_REDIRECT_URL = '/'  # Redirect after logout
+ACCOUNT_EMAIL_VERIFICATION = 'optional'  # Change as needed
+ACCOUNT_AUTHENTICATED_LOGIN_REDIRECTS = True  # Redirect authenticated users   """
+
 

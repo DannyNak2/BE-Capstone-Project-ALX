@@ -1,0 +1,42 @@
+{% extends 'base.html' %}
+
+{% load static %}  <!-- Load static files -->
+
+{% block content %}
+<h1>Your Profile</h1>
+
+<form method="POST" enctype="multipart/form-data">
+    {% csrf_token %}
+    <label for="username">Username:</label>
+    <input type="text" name="username" value="{{ user.username }}" required>
+    
+    <label for="first_name">First Name:</label>
+    <input type="text" name="first_name" value="{{ user.first_name }}" required>
+    
+    <label for="last_name">Last Name:</label>
+    <input type="text" name="last_name" value="{{ user.last_name }}" required>
+    
+    <label for="bio">Bio:</label>
+    <textarea name="bio">{{ user.profile.bio }}</textarea>
+    
+    <label for="profile_picture">Profile Picture:</label>
+    <input type="file" name="profile_picture">
+
+    <button type="submit">Update Profile</button>
+</form>
+
+{% if user.profile.profile_picture %}
+    <h2>Your Profile Picture</h2>
+    <img src="{{ user.profile.profile_picture.url }}" alt="Profile Image" style="max-width: 200px; max-height: 200px;">
+{% else %}
+    <h2>Your Profile Picture</h2>
+    <img src="{% static 'images/placeholder_image.jpeg' %}" alt="Placeholder Image" style="max-width: 200px; max-height: 200px;">
+{% endif %}
+
+<p>Username: {{ user.username }}</p>
+<p>Email: {{ user.email }}</p>
+<p>First Name: {{ user.first_name }}</p>
+<p>Last Name: {{ user.last_name }}</p>
+<p>Bio: {{ user.profile.bio }}</p> <!-- Display the bio -->
+<p>Joined: {{ user.date_joined }}</p>
+{% endblock %}

@@ -1,0 +1,43 @@
+{% extends 'base.html' %}
+
+{% block title %}Register{% endblock %}
+
+{% block content %}
+<h2>Register</h2>
+
+<form method="post">
+    {% csrf_token %}
+    
+    <div class="form-group">
+        <label for="id_email">Email:</label>
+        <input type="email" id="id_email" name="email" class="form-control" required value="{{ request.POST.email }}">
+        {% if errors.email %}
+            {% for error in errors.email %}
+                <span class="text-danger">{{ error }}</span>
+            {% endfor %}
+        {% endif %}
+    </div>
+    
+    <div class="form-group">
+        <label for="id_username">Username:</label>
+        <input type="text" id="id_username" name="username" class="form-control" required value="{{ request.POST.username }}">
+        {% if errors.username %}
+            {% for error in errors.username %}
+                <span class="text-danger">{{ error }}</span>
+            {% endfor %}
+        {% endif %}
+    </div>
+
+    <div class="form-group">
+        <label for="id_password">Password:</label>
+        <input type="password" id="id_password" name="password" class="form-control" required>
+        {% if errors.password %}
+            {% for error in errors.password %}
+                <span class="text-danger">{{ error }}</span>
+            {% endfor %}
+        {% endif %}
+    </div>
+
+    <button type="submit" class="btn btn-primary">Register</button>
+</form>
+{% endblock %}

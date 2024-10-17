@@ -5,6 +5,7 @@ from django.utils import timezone
 from django.db.models.signals import post_save
 from django.dispatch import receiver
 from django.db.models import Avg, Count
+from django.urls import reverse
 
 class CustomUser(AbstractUser):
     email = models.EmailField(unique=True)
@@ -37,6 +38,18 @@ class Post(models.Model):
 
     def __str__(self):
         return self.title
+    
+    def get_absolute_url(self):
+        return reverse('accounts:post-retrieve-update-destroy', args=[str(self.id)])
+    
+    def average_rating(self):
+        ratings = PostRating.objects.filter(post=self)
+        if ratings.exists():
+            return sum(rating.rating for rating in ratings) / ratings.count()
+        return 0
+
+    def likes_count(self):
+        return PostLike.objects.filter(post=self).count()
 
 class Tag(models.Model):
     name = models.CharField(max_length=50)
@@ -45,17 +58,30 @@ class Tag(models.Model):
         return self.name
     
 class Comment(models.Model):
-    user = models.ForeignKey(User, on_delete=models.CASCADE)
+    user = models.ForeignKey(User, related_name='comments', on_delete=models.CASCADE)
     post = models.ForeignKey(Post, related_name='comments', on_delete=models.CASCADE)
     content = models.TextField()
     created_at = models.DateTimeField(auto_now_add=True)
-    parent_comment = models.ForeignKey('self', null=True, blank=True, on_delete=models.CASCADE)
+    parent_comment = models.ForeignKey('self', null=True, blank=True, related_name='replies', on_delete=models.CASCADE)
+
+    def __str__(self):
+        return f"Comment by {self.user.username} on {self.post.title}"
+
 
 class PostRating(models.Model):
     post = models.ForeignKey(Post, on_delete=models.CASCADE)
     user = models.ForeignKey(User, on_delete=models.CASCADE)
     rating = models.PositiveIntegerField(choices=[(1, '1 Star'), (2, '2 Stars'), (3, '3 Stars'), (4, '4 Stars'), (5, '5 Stars')])
 
+    class Meta:
+        unique_together = ('post', 'user')  # Ensure users can't rate the same post multiple times
+
+class PostLike(models.Model):
+    post = models.ForeignKey(Post, on_delete=models.CASCADE)
+    user = models.ForeignKey(User, on_delete=models.CASCADE)
+
+    class Meta:
+        unique_together = ('post', 'user')  # Ensure users can't like the same post multiple times
 
 class Profile(models.Model):
     user = models.OneToOneField(User, on_delete=models.CASCADE, related_name='profile')
@@ -65,6 +91,9 @@ class Profile(models.Model):
 
     def __str__(self):
         return f"{self.user.username}'s Profile"
+    
+    def get_absolute_url(self):
+        return reverse('profile-detail', kwargs={'username': self.user.username})
 
 @receiver(post_save, sender=User)
 def create_profile(sender, instance, created, **kwargs):
