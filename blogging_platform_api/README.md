@@ -56,6 +56,7 @@ Follow these steps to set up the **Blogging Platform API** locally:
     ```bash
     python manage.py runserver
 
+---
 
 ## API Endpoints
 
