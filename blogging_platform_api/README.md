@@ -101,6 +101,9 @@ Here are the main API endpoints available in the Blogging Platform API:
 - GET /posts/author/<author_id>/ – Filter posts by author
 
 
+---
+
+
 ## Authentication
 
 This project uses JWT (JSON Web Token) for authentication. To access protected endpoints, include a valid JWT token in the Authorization header:
@@ -108,6 +111,7 @@ This project uses JWT (JSON Web Token) for authentication. To access protected e
     ``makefile
     Authorization: Bearer <your-token>
 
+---
 
 ## Testing
 
@@ -116,6 +120,7 @@ To run the test suite:
     ``bash
     python manage.py test
 
+---
 
 ## Deployment
 
@@ -136,6 +141,7 @@ On PythonAnywhere: Follow their Django deployment guide.
 
 5.**Test your deployed API** by accessing the public URL provided by the platform.
 
+---
 
 ## Contributing
 
@@ -159,11 +165,13 @@ Contributions are welcome! To contribute to the **Blogging Platform API**:
 
 5.**Submit a pull request**.
 
+---
 
 ## License
 
 This project is licensed under the MIT License. See the LICENSE file for details.
 
+---
 
 ## Contact
 
