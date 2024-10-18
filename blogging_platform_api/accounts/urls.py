@@ -12,7 +12,7 @@ app_name = 'accounts'
 urlpatterns = [
     #User Registration and Authentication
     path('register/', RegisterView.as_view(), name='register'),
-    path('login/', CustomLoginView.as_view(), name='login'),
+    path('', CustomLoginView.as_view(), name='login'),
     path('token/refresh/', TokenRefreshView.as_view(), name='token_refresh'),
     path('profile/', ProfileView.as_view(), name='profile'),
     #path('profile/<str:username>/', ProfileView.as_view(), name='profile'),
