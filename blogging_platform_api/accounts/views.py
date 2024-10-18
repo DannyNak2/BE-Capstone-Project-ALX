@@ -54,14 +54,25 @@ class RegisterView(generics.CreateAPIView):
         return render(request, self.template_name, {'serializer': serializer})
 
     def post(self, request, *args, **kwargs):
-        serializer = self.get_serializer(data=request.POST)
-        if serializer.is_valid():
-            serializer.save()
-            messages.success(request, "Registration successful. You can now log in.")
-            return redirect(self.success_url)
+        # If request is API client (JSON), use request.data, otherwise use form data
+        if request.content_type == 'application/json':
+            data = request.data  # Handle JSON data
         else:
-            # If the form is invalid, pass errors to the template
-            return render(request, self.template_name, {'serializer': serializer, 'errors': serializer.errors})
+            data = request.POST  # Handle form data
+
+        serializer = self.get_serializer(data=data)
+        if serializer.is_valid():
+            user = serializer.save()
+            if request.content_type == 'application/json':
+                return Response({"message": "Registration successful", "user": serializer.data}, status=status.HTTP_201_CREATED)
+            else:
+                messages.success(request, "Registration successful. You can now log in.")
+                return redirect(self.success_url)
+        else:
+            if request.content_type == 'application/json':
+                return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+            else:
+                return render(request, self.template_name, {'serializer': serializer, 'errors': serializer.errors})
         
 class CustomLoginView(TokenObtainPairView):
     template_name = 'login.html'
