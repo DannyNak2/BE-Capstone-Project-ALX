@@ -24,7 +24,7 @@ Follow these steps to set up the **Blogging Platform API** locally:
 
 1. **Clone the repository:**
    ```bash
-   git clone https://github.com/yourusername/blogging_platform_api.git
+   git clone https://github.com/DannyNak2/BE-Capstone-Project-ALX/blogging_platform_api.git
    cd blogging_platform_api
 
 2. **Create and activate a virtual environment:**
